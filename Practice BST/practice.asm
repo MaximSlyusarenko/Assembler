@@ -9,6 +9,7 @@ global treeInsert
 global treeFind
 global nextTree
 global prevTree
+global removeTree
 
 section .text
 
@@ -215,4 +216,91 @@ prevTree:
 
 .return_r15:
 	mov result, r15
-	function_end	
+	function_end
+
+; arg1 - pointer on node to delete
+; void
+removeTree:
+	cmp arg1, 0
+	je .remove_NULL
+	function_start
+	mov r15, [arg1 + node.parent]
+	cmp qword [arg1 + node.right], 0
+	je .not_right
+	cmp qword [arg1 + node.left], 0
+	je .not_left
+	call nextTree
+	mov r13, [result + node.value]
+	mov [arg1 + node.value], r13
+	mov r13, [result + node.parent]
+	mov r13, [r13 + node.left]
+	cmp r13, result
+	je .successor_left
+	mov r12, [result + node.parent]
+	mov r13, [r12 + node.right]
+	mov [r13], r12
+	mov r12, [result + node.right]
+	cmp r12, 0
+	jne .do_parent2
+	function_end
+
+.do_parent2:
+	mov r13, [result + node.right]
+	mov r11, [result + node.parent]
+	mov [r13 + node.parent], r11
+	function_end
+
+.successor_left:
+	mov r13, [result + node.right]
+	mov r12, [result + node.right]
+	cmp r12, 0
+	jne .do_parent
+	function_end
+
+.do_parent:
+	mov r11, [result + node.parent]
+	mov [r13 + node.parent], r11
+	function_end
+
+.not_right:
+	cmp qword [arg1 + node.left], 0
+	je .leaf
+	cmp [r15 + node.left], arg1
+	je .left_child
+	mov r14, [arg1 + node.left]
+	mov [r15 + node.right], r14
+	mov [r14 + node.parent], r15
+	function_end
+
+.left_child:
+	mov r14, [arg1 + node.left]
+	mov [r15 + node.left], r14
+	mov [r14 + node.parent], r15
+	function_end
+
+.not_left:
+	cmp [r15 + node.left], arg1
+	je .left_child2
+	mov r14, [arg1 + node.right]
+	mov [r15 + node.right], r14
+	mov [r14 + node.parent], r15
+	function_end
+
+.left_child2:
+	mov r14, [arg1 + node.right]
+	mov [r15 + node.left], r14
+	mov [r14 + node.parent], r15
+	function_end
+
+.leaf:
+	cmp [r15 + node.left], arg1
+	je .remove_left
+	mov qword [r15 + node.right], 0
+	function_end
+
+.remove_left:
+	mov qword [r15 + node.left], 0	
+	function_end
+
+.remove_NULL:
+	ret
